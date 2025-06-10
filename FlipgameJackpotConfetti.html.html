@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mystery Card Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    
+    :root {
+      --emerald: #38b48b;
+      --emerald-dark: #2a8c6f;
+      --mint: #d1f1e7;
+      --glass: rgba(255, 255, 255, 0.2);
+      --glow: 0 0 15px rgba(56, 180, 139, 0.6);
+      --card-width: 28vw;
+      --card-height: calc(var(--card-width) * 1.4);
+    }
+    
+    body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #ffffff;
+  background-image: url('https://i.imgur.com/gWW7z8m.jpeg');
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  background-position: center 80%;  /* ✅ Moved image up slightly */
+  background-attachment: fixed;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 40px;
+  box-sizing: border-box;
+}
+
+    .login-box, .game-box {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      margin-top: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-sizing: border-box;
+    }
+
+    h2, h3 {
+      color: #2a5a50;
+      margin: 0 0 15px 0;
+      font-size: 1.5rem;
+    }
+
+    input {
+      width: 85%;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.1);
+      font-size: 1rem;
+      background: rgba(255,255,255,0.8);
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      background: var(--emerald);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(56, 180, 139, 0.3);
+      margin-top: 10px;
+      width: 85%;
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+
+    .game-header p {
+      margin: 0;
+      background: rgba(255,255,255,0.3);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      width: 100%;
+      margin: 10px 0 20px;
+    }
+
+    .card {
+      width: 100%;
+      height: 0;
+      padding-bottom: 140%;
+      perspective: 1000px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+      transform: rotateY(0deg);
+    }
+
+    .card.revealed .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, var(--glass), rgba(255,255,255,0.4));
+      border: 2px solid rgba(255,255,255,0.3);
+      transform: rotateY(0deg);
+    }
+
+    .card-front::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.8) 50%,
+        rgba(255,255,255,0) 100%
+      );
+      transform: rotate(30deg);
+      animation: shine 3s infinite;
+    }
+
+    .card-front span {
+      font-size: 2.2rem;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
+      position: relative;
+      z-index: 1;
+      animation: pulse 2s infinite;
+    }
+
+    .card-front small {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.7rem;
+      color: rgba(0,0,0,0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, var(--mint), white);
+      transform: rotateY(180deg);
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #2a5a50;
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+
+    .card-back span:first-child {
+      font-size: 2.2rem;
+      margin-bottom: 5px;
+    }
+
+    .emoji-board {
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.3);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      font-size: 0.95rem;
+      border: 1px solid rgba(255,255,255,0.2);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .emoji-board table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    .emoji-board th, .emoji-board td {
+      padding: 8px;
+      text-align: center;
+    }
+
+    .emoji-board th {
+      background: linear-gradient(to right, var(--emerald), var(--emerald-dark));
+      color: white;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .emoji-board tr:nth-child(even) {
+      background-color: rgba(255,255,255,0.2);
+    }
+
+    .hidden { 
+      display: none; 
+    }
+    
+    .status { 
+      margin: 15px 0;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.3);
+      font-size: 1rem;
+    }
+    
+    .win-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      font-size: 1.2rem;
+      font-weight: 700;
+      z-index: 100;
+      animation: floatIn 0.5s ease-out, fadeOut 0.5s ease-in 2s forwards;
+      text-align: center;
+      max-width: 80%;
+    }
+    
+    @keyframes shine {
+      0% { transform: translateX(-100%) rotate(30deg); }
+      100% { transform: translateX(100%) rotate(30deg); }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes floatIn {
+      0% { transform: translate(-50%, -30%); opacity: 0; }
+      100% { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+    
+    @media (max-width: 420px) {
+      :root {
+        --card-width: 20vw;
+      }
+      
+      h2, h3 {
+        font-size: 1.3rem;
+      }
+      
+      .game-header {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .game-header p {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      
+      .card {
+        padding-bottom: 150%;
+      }
+      
+      .card-front span, .card-back span:first-child {
+        font-size: 2rem;
+      }
+      
+      .emoji-board {
+        font-size: 0.9rem;
+      }
+      
+      .emoji-board th, .emoji-board td {
+        padding: 6px 4px;
+        font-size: 0.8rem;
+      }
+    }
+  
+    .game-header span:hover {
+      background: linear-gradient(to right, var(--emerald), var(--mint));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 8px rgba(56, 180, 139, 0.5);
+      transition: all 0.4s ease;
+    }
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+</head>
+<body>
+  <div class="login-box" id="loginBox">
+<!-- 🧪 Simple GIF Embed Test -->
+    <h2>Login</h2>
+    <input type="text" id="studentId" placeholder="Student ID" required />
+    <input type="password" id="studentPassword" placeholder="Password" required />
+    <button onclick="login()">Enter Game</button>
+    <div id="loginMsg" class="status"></div>
+  </div>
+
+  <div class="game-box hidden" id="gameBox">
+    <div class="game-header">
+      <p>👤 <span id="studentName"></span></p>
+      <p>🏆 Points: <span id="studentPoints">0</span></p>
+    </div>
+    <p>💰 Spin Cost: <span id="spinCost">...</span> point(s)</p>
+
+    <div class="cards" id="cardGrid"></div>
+    <div id="result" class="status"></div>
+
+    <div class="emoji-board">
+      <strong>🎯 Prize Board</strong>
+      <table id="emojiTable">
+        <thead>
+          <tr>
+            <th>Emoji</th>
+            <th>Prize</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    const endpoint = 'https://script.google.com/macros/s/AKfycbxKSDSZm-iM9dTqT_noZ_EC1DV-lFcIinJGt-2sIdBCcWbfahyx_8uOKsEbenaeQMKa/exec';
+    let studentID = '', studentPassword = '';
+    let playCount = 0;
+    const maxPlaysPerRound = 1;
+
+    function login() {
+      const id = document.getElementById('studentId').value.trim();
+      const pass = document.getElementById('studentPassword').value.trim();
+      if (!id || !pass) return alert('Please enter both ID and password.');
+
+    const loginButton = document.querySelector("button[onclick='login()']");
+    const originalText = loginButton.textContent;
+    loginButton.disabled = true;
+    loginButton.textContent = "Logging in...";
+
+
+      const formData = new FormData();
+      formData.append("action", "login");
+      formData.append("id", id);
+      formData.append("password", pass);
+
+      fetch(endpoint, { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            studentID = id;
+            studentPassword = pass;
+            document.getElementById('studentName').innerText = data.name;
+            document.getElementById('studentPoints').innerText = data.points;
+            
+            
+            loginButton.disabled = false;
+            loginButton.textContent = originalText;
+
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('gameBox').classList.remove('hidden');
+            loadCards();
+            fetchPrizeBoard();
+          } else {
+            document.getElementById('loginMsg').innerText = data.message;
+
+            loginButton.disabled = false;
+            loginButton.textContent = originalText;
+
+          }
+        })
+        .catch(() => {
+          document.getElementById('loginMsg').innerText = "Error connecting to server.";
+
+            loginButton.disabled = false;
+            loginButton.textContent = originalText;
+
+        });
+    }
+
+    function loadCards() {
+      const grid = document.getElementById('cardGrid');
+      grid.innerHTML = '';
+      playCount = 0;
+      document.getElementById('result').innerText = '';
+
+      for (let i = 0; i < 8; i++) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const inner = document.createElement('div');
+        inner.className = 'card-inner';
+
+        const front = document.createElement('div');
+        front.className = 'card-front';
+        front.innerHTML = '<span>❓</span><small>Tap to Reveal</small>';
+
+        const back = document.createElement('div');
+        back.className = 'card-back';
+        back.innerHTML = '<span></span><div></div>';
+
+        inner.appendChild(front);
+        inner.appendChild(back);
+        card.appendChild(inner);
+
+        card.onclick = () => revealCard(card, back);
+        grid.appendChild(card);
+      }
+    }
+
+    function showWinMessage(message) {
+      const existingMsg = document.querySelector('.win-message');
+      if (existingMsg) existingMsg.remove();
+      
+      const msg = document.createElement('div');
+      msg.className = 'win-message';
+      msg.textContent = message;
+      document.body.appendChild(msg);
+      
+      setTimeout(() => {
+        msg.remove();
+      }, 2500);
+    }
+
+    function revealCard(cardEl, backEl) {
+  if (cardEl.classList.contains('revealed') || playCount >= maxPlaysPerRound) return;
+
+  const currentPoints = parseInt(document.getElementById('studentPoints').innerText);
+  const spinCost = parseInt(document.getElementById('spinCost').innerText);
+
+  if (currentPoints < spinCost) {
+    document.getElementById('result').innerText = "Not enough points.";
+    return;
+  }
+
+  // 🟡 Show deduction immediately
+  document.getElementById('studentPoints').innerText = currentPoints - spinCost;
+  document.getElementById('result').innerText = "Flipping...";
+
+  // 🔒 Disable all cards to prevent multiple clicks
+  const allCards = document.querySelectorAll('.card');
+  allCards.forEach(card => card.style.pointerEvents = "none");
+
+  const formData = new FormData();
+  formData.append("action", "handleCardGame");
+  formData.append("id", studentID);
+  formData.append("password", studentPassword);
+
+  fetch(endpoint, {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      backEl.querySelector('span').textContent = data.emoji;
+      backEl.querySelector('div').textContent = data.prize;
+
+      if (data.change >= 20) {
+        backEl.style.background = 'linear-gradient(135deg, #d1c4e9, #b39ddb)';
+      } else if (data.change >= 10) {
+        backEl.style.background = 'linear-gradient(135deg, #b3e5fc, #81d4fa)';
+      } else if (data.change >= 5) {
+        backEl.style.background = 'linear-gradient(135deg, #c8e6c9, #a5d6a7)';
+      }
+
+      cardEl.classList.add('revealed');
+
+      const winMsg = data.change > 0 ?
+        `🎉 You won +${data.change} Points!` : `🙏 Thank You!`;
+      showWinMessage(winMsg);
+
+      
+      if (data.prize.includes("Bonus Jackpot")) {
+        confetti({
+          particleCount: 100,
+          spread: 90,
+          origin: { y: 0.6 }
+        });
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+
+      // ✅ Sync actual balance from backend
+      document.getElementById('studentPoints').innerText = data.remaining;
+      document.getElementById('result').innerText = "";
+      playCount++;
+
+      if (playCount >= maxPlaysPerRound) {
+        setTimeout(() => {
+          loadCards();
+        }, 2500);
+      }
+    } else {
+      // ❌ Error or rejection, revert UI deduction
+      document.getElementById('result').innerText = data.message;
+      document.getElementById('studentPoints').innerText = currentPoints;
+    }
+
+    // 🔓 Re-enable cards
+    allCards.forEach(card => card.style.pointerEvents = "");
+  })
+  .catch(() => {
+    document.getElementById('result').innerText = "Error contacting server.";
+    document.getElementById('studentPoints').innerText = currentPoints;
+    allCards.forEach(card => card.style.pointerEvents = "");
+  });
+}
+    function fetchPrizeBoard() {
+      const formData = new FormData();
+      formData.append("action", "getSlotConfig");
+
+      fetch(endpoint, { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('spinCost').innerText = data.spinCost;
+
+          if (data.prizes) {
+            const tableBody = document.querySelector('#emojiTable tbody');
+            tableBody.innerHTML = '';
+
+            data.prizes.forEach(prize => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td style="font-size: 1.2rem">${prize.Emoji}</td>
+                <td>${prize.PrizeName}</td>
+                <td>${prize.RewardPoints}</td>
+              `;
+              tableBody.appendChild(row);
+            });
+          }
+        });
+    }
+  </script>
+</body>
+</html>
