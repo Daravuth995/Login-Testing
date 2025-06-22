@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spinning Wheel Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        .login-container, .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .game-container {
+            display: none;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .user-info {
+            background: linear-gradient(45deg, #4ECDC4, #45B7D1);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .points {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin: 30px auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-size: 14px;
+            overflow: hidden;
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 30px solid #FF6B6B;
+            transform: translateX(-50%);
+            z-index: 5;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .spin-controls {
+            margin-top: 30px;
+        }
+
+        .fallback-info {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #6c757d;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(45deg, #4ECDC4, #45B7D1);
+        }
+
+        .toast.error {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #FFD700;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .jackpot-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            animation: jackpot-glow 2s ease-in-out;
+            z-index: 998;
+        }
+
+        @keyframes jackpot-glow {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .result-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-win {
+            background: linear-gradient(45deg, #4ECDC4, #45B7D1);
+            color: white;
+        }
+
+        .result-jackpot {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        .result-lose {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .login-container, .game-container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .wheel-container {
+                width: 280px;
+                height: 280px;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div class="login-container" id="loginContainer">
+            <h1>🎰 Spinning Wheel Game</h1>
+            
+            <div class="fallback-info">
+                <h3>🔧 Fallback Mode Available</h3>
+                <p><strong>Demo Credentials:</strong></p>
+                <p>StudentID: <code>demo001</code> | Password: <code>password123</code></p>
+                <p>Points: 500 | Name: Demo User</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="studentId">Student ID</label>
+                    <input type="text" id="studentId" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                
+                <button type="submit" class="btn" id="loginBtn">
+                    <span id="loginText">Login</span>
+                    <span id="loginLoading" class="loading" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-container" id="gameContainer">
+            <div class="user-info">
+                <div>
+                    <h2 id="userName">Welcome!</h2>
+                    <p>Student ID: <span id="userStudentId"></span></p>
+                </div>
+                <div class="points">
+                    💰 <span id="userPoints">0</span> Points
+                </div>
+            </div>
+
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel" id="wheel"></div>
+                <div class="wheel-center">🎯</div>
+            </div>
+
+            <div class="spin-controls">
+                <button class="btn" id="spinBtn">
+                    <span id="spinText">Spin the Wheel!</span>
+                    <span id="spinLoading" class="loading" style="display: none;"></span>
+                </button>
+                <p style="margin-top: 10px; color: #666;">
+                    Cost: <span id="spinCost">50</span> points per spin
+                </p>
+            </div>
+
+            <div class="result-message" id="resultMessage" style="display: none;"></div>
+
+            <button class="btn" onclick="logout()" style="margin-top: 20px; background: linear-gradient(45deg, #FF6B6B, #FF8E8E);">
+                Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Celebration Container -->
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            // Replace with your Google Apps Script Web App URL
+            SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwijx5Nt52UOMP1an4rcwiljdXStJbLj0xUgoAZE-nO3dZe8SS77VA-gBw-69cUAWq81g/exec',
+            
+            // Fallback data for offline/demo mode
+            FALLBACK_USER: {
+                studentId: 'demo001',
+                password: 'password123',
+                name: 'Demo User',
+                points: 500
+            },
+            
+            FALLBACK_PRIZES: [
+                { id: 1, name: 'Jackpot 🎉', probability: 0.05, points: 1000, color: '#FFD700' },
+                { id: 2, name: '100 Points', probability: 0.25, points: 100, color: '#4ECDC4' },
+                { id: 3, name: '50 Points', probability: 0.30, points: 50, color: '#45B7D1' },
+                { id: 4, name: '25 Points', probability: 0.20, points: 25, color: '#96CEB4' },
+                { id: 5, name: 'Try Again', probability: 0.20, points: 0, color: '#A0AEC0' }
+            ],
+            
+            FALLBACK_SPIN_COST: 50
+        };
+
+        // Global state
+        let currentUser = null;
+        let prizes = [];
+        let spinCost = 50;
+        let isSpinning = false;
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('spinBtn').addEventListener('click', handleSpin);
+            
+            // Pre-fill demo credentials for easy testing
+            document.getElementById('studentId').value = 'demo001';
+            document.getElementById('password').value = 'password123';
+        });
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('studentId').value;
+            const password = document.getElementById('password').value;
+            
+            setLoginLoading(true);
+            
+            try {
+                // Try to authenticate with Google Sheets
+                const response = await fetchWithFallback('login', {
+                    studentId: studentId,
+                    password: password
+                });
+                
+                if (response.success) {
+                    currentUser = response.user;
+                    await initializeGame();
+                    showToast('Login successful!', 'success');
+                } else {
+                    showToast('Invalid credentials!', 'error');
+                }
+            } catch (error) {
+                console.log('Login error:', error);
+                showToast('Login failed. Check your connection.', 'error');
+            }
+            
+            setLoginLoading(false);
+        }
+
+        // Initialize game after login
+        async function initializeGame() {
+            try {
+                // Fetch prizes and config
+                const prizesResponse = await fetchWithFallback('getPrizes');
+                const configResponse = await fetchWithFallback('getConfig');
+                
+                prizes = prizesResponse.prizes || CONFIG.FALLBACK_PRIZES;
+                spinCost = configResponse.spinCost || CONFIG.FALLBACK_SPIN_COST;
+                
+                // Update UI
+                document.getElementById('userName').textContent = `Welcome, ${currentUser.name}!`;
+                document.getElementById('userStudentId').textContent = currentUser.studentId;
+                document.getElementById('userPoints').textContent = currentUser.points;
+                document.getElementById('spinCost').textContent = spinCost;
+                
+                // Create wheel
+                createWheel();
+                
+                // Show game screen
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                
+            } catch (error) {
+                console.log('Game initialization error:', error);
+                showToast('Failed to load game data', 'error');
+            }
+        }
+
+        // Create the spinning wheel
+        function createWheel() {
+            const wheel = document.getElementById('wheel');
+            wheel.innerHTML = '';
+            
+            const totalSegments = prizes.length;
+            const segmentAngle = 360 / totalSegments;
+            
+            prizes.forEach((prize, index) => {
+                const segment = document.createElement('div');
+                segment.className = 'wheel-segment';
+                segment.style.backgroundColor = prize.color;
+                segment.style.transform = `rotate(${index * segmentAngle}deg)`;
+                segment.innerHTML = `<span style="transform: rotate(${segmentAngle/2}deg);">${prize.name}</span>`;
+                wheel.appendChild(segment);
+            });
+        }
+
+        // Handle spin
+        async function handleSpin() {
+            if (isSpinning) return;
+            
+            if (currentUser.points < spinCost) {
+                showToast('Not enough points to spin!', 'error');
+                return;
+            }
+            
+            isSpinning = true;
+            setSpinLoading(true);
+            document.getElementById('resultMessage').style.display = 'none';
+            
+            try {
+                // Get spin result from backend
+                const response = await fetchWithFallback('spin', {
+                    studentId: currentUser.studentId
+                });
+                
+                if (response.success) {
+                    // Update points
+                    currentUser.points = response.newPoints;
+                    document.getElementById('userPoints').textContent = currentUser.points;
+                    
+                    // Animate wheel
+                    await animateWheel(response.selectedPrize);
+                    
+                    // Show result
+                    showResult(response.selectedPrize, response.pointsWon);
+                    
+                } else {
+                    showToast(response.message || 'Spin failed!', 'error');
+                }
+                
+            } catch (error) {
+                console.log('Spin error:', error);
+                showToast('Spin failed. Check your connection.', 'error');
+            }
+            
+            isSpinning = false;
+            setSpinLoading(false);
+        }
+
+        // Animate wheel spinning
+        function animateWheel(selectedPrize) {
+            return new Promise(resolve => {
+                const wheel = document.getElementById('wheel');
+                const prizeIndex = prizes.findIndex(p => p.id === selectedPrize.id);
+                const segmentAngle = 360 / prizes.length;
+                
+                // Calculate target angle (point to top)
+                const targetAngle = (prizeIndex * segmentAngle) + (segmentAngle / 2);
+                const spins = 3; // Number of full rotations
+                const finalAngle = (spins * 360) + (360 - targetAngle);
+                
+                wheel.style.transform = `rotate(${finalAngle}deg)`;
+                
+                setTimeout(resolve, 3000); // Match CSS transition duration
+            });
+        }
+
+        // Show spin result
+        function showResult(prize, pointsWon) {
+            const resultDiv = document.getElementById('resultMessage');
+            
+            if (pointsWon > 0) {
+                if (pointsWon >= 500) { // Jackpot threshold
+                    resultDiv.className = 'result-message result-jackpot';
+                    resultDiv.innerHTML = `🎉 JACKPOT! You won ${pointsWon} points! 🎉`;
+                    showJackpotCelebration();
+                } else {
+                    resultDiv.className = 'result-message result-win';
+                    resultDiv.innerHTML = `🎊 Congratulations! You won ${pointsWon} points!`;
+                    showConfetti();
+                }
+                showToast(`Won ${pointsWon} points!`, 'success');
+            } else {
+                resultDiv.className = 'result-message result-lose';
+                resultDiv.innerHTML = `😔 Better luck next time!`;
+            }
+            
+            resultDiv.style.display = 'flex';
+        }
+
+        // Show confetti animation
+        function showConfetti() {
+            const celebration = document.getElementById('celebration');
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = getRandomColor();
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    celebration.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 20);
+            }
+        }
+
+        // Show jackpot celebration
+        function showJackpotCelebration() {
+            showConfetti();
+            
+            // Add flash effect
+            const flash = document.createElement('div');
+            flash.className = 'jackpot-flash';
+            document.body.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.remove();
+            }, 2000);
+        }
+
+        // Get random color for confetti
+        function getRandomColor() {
+            const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Fetch with fallback to local data
+        async function fetchWithFallback(action, data = {}) {
+            try {
+                // Try to fetch from Google Apps Script
+                const response = await fetch(CONFIG.SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action, ...data })
+                });
+                
+                if (response.ok) {
+                    return await response.json();
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (error) {
+                console.log('Falling back to local data for action:', action);
+                return handleFallback(action, data);
+            }
+        }
+
+        // Handle fallback responses
+        function handleFallback(action, data) {
+            switch (action) {
+                case 'login':
+                    if (data.studentId === CONFIG.FALLBACK_USER.studentId && 
+                        data.password === CONFIG.FALLBACK_USER.password) {
+                        return {
+                            success: true,
+                            user: CONFIG.FALLBACK_USER
+                        };
+                    } else {
+                        return { success: false };
+                    }
+                
+                case 'getPrizes':
+                    return { prizes: CONFIG.FALLBACK_PRIZES };
+                
+                case 'getConfig':
+                    return { spinCost: CONFIG.FALLBACK_SPIN_COST };
+                
+                case 'spin':
+                    // Simulate spin logic
+                    const randomNum = Math.random();
+                    let cumulativeProbability = 0;
+                    let selectedPrize = CONFIG.FALLBACK_PRIZES[CONFIG.FALLBACK_PRIZES.length - 1];
+                    
+                    for (const prize of CONFIG.FALLBACK_PRIZES) {
+                        cumulativeProbability += prize.probability;
+                        if (randomNum <= cumulativeProbability) {
+                            selectedPrize = prize;
+                            break;
+                        }
+                    }
+                    
+                    // Update fallback user points
+                    CONFIG.FALLBACK_USER.points -= CONFIG.FALLBACK_SPIN_COST;
+                    CONFIG.FALLBACK_USER.points += selectedPrize.points;
+                    
+                    return {
+                        success: true,
+                        selectedPrize: selectedPrize,
+                        pointsWon: selectedPrize.points,
+                        newPoints: CONFIG.FALLBACK_USER.points
+                    };
+                
+                default:
+                    return { success: false, message: 'Unknown action' };
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Set login loading state
+        function setLoginLoading(loading) {
+            const loginBtn = document.getElementById('loginBtn');
+            const loginText = document.getElementById('loginText');
+            const loginLoading = document.getElementById('loginLoading');
+            
+            loginBtn.disabled = loading;
+            loginText.style.display = loading ? 'none' : 'inline';
+            loginLoading.style.display = loading ? 'inline-block' : 'none';
+        }
+
+        // Set spin loading state
+        function setSpinLoading(loading) {
+            const spinBtn = document.getElementById('spinBtn');
+            const spinText = document.getElementById('spinText');
+            const spinLoading = document.getElementById('spinLoading');
+            
+            spinBtn.disabled = loading;
+            spinText.style.display = loading ? 'none' : 'inline';
+            spinLoading.style.display = loading ? 'inline-block' : 'none';
+        }
+
+        // Logout function
+        function logout() {
+            currentUser = null;
+            prizes = [];
+            isSpinning = false;
+            
+            // Reset form
+            document.getElementById('loginForm').reset();
+            document.getElementById('studentId').value = 'demo001';
+            document.getElementById('password').value = 'password123';
+            
+            // Show login screen
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'block';
+            
+            showToast('Logged out successfully', 'success');
+        }
+    </script>
+</body>
+</html>
